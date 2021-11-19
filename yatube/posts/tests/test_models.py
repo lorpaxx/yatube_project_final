@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Comment, Group, Post
+from ..models import Comment, Group, Post, Follow
 
 User = get_user_model()
 
@@ -202,11 +202,72 @@ class CommentModelsTest(TestCase):
             'author': 'Автор комментария',
             'text': 'Текст комментария'
         }
-        comment: Group = CommentModelsTest.comment
+        comment: Comment = CommentModelsTest.comment
         for field, expected_value in field_help_text.items():
             with self.subTest(field=field):
                 self.assertEqual(
                     comment._meta.get_field(field).help_text,
+                    expected_value,
+                    'Тест не пройден'
+                )
+
+
+class FollowModelTest(TestCase):
+    '''
+    Тестируем модель Follow.
+    '''
+    @classmethod
+    def setUpClass(cls):
+        '''
+        Создаём 1 экземпляр модели Follow.
+        '''
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='auth')
+        cls.follow_user = User.objects.create_user(username='follow_auth')
+        cls.follow = Follow.objects.create(
+            user=cls.user,
+            author=cls.follow_user,
+        )
+
+    def test_posts_models_Follow_have_correct_object_names(self):
+        """
+        Проверяем, что у модели Comment корректно работает __str__.
+        """
+        follow: Follow = FollowModelTest.follow
+        text = str(follow)
+        self.assertEqual(
+            text,
+            'auth: follow_auth',
+            'Тест не пройден, __str__ Follow выводит неожидаемое')
+
+    def test_posts_models_Follow_have_correct_verbose_name(self):
+        '''
+        Пробежимся по полям модели Follow и проверим verbose_name.
+        '''
+        field_verboses = {
+            'user': 'Подписчик',
+            'author': 'Автор',
+        }
+        follow: Follow = FollowModelTest.follow
+        for field, expected_value in field_verboses.items():
+            with self.subTest(field=field):
+                self.assertEqual(
+                    follow._meta.get_field(field).verbose_name,
+                    expected_value,
+                    'Тест не пройден'
+                )
+
+    def test_posts_models_Follow_have_correct_help_text(self):
+        '''Пробежимся по полям модели Comment и проверим help_text.'''
+        field_help_text = {
+            'user': 'Подписчик',
+            'author': 'Автор'
+        }
+        follow: Follow = FollowModelTest.follow
+        for field, expected_value in field_help_text.items():
+            with self.subTest(field=field):
+                self.assertEqual(
+                    follow._meta.get_field(field).help_text,
                     expected_value,
                     'Тест не пройден'
                 )

@@ -124,3 +124,40 @@ class Comment(models.Model):
         сокращённый text выбранного комментария.
         '''
         return self.text[:15]
+
+
+class Follow(models.Model):
+    '''
+    Класс Follow.
+    '''
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False,
+        related_name='follower',
+        verbose_name='Подписчик',
+        help_text='Подписчик'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False,
+        related_name='following',
+        verbose_name='Автор',
+        help_text='Автор'
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+
+    def __str__(self):
+        '''
+        При обращении к экземпляру возвращаем
+        username автора и подписчика.
+        '''
+        user = self.user.username
+        author = self.author.username
+        return f'{user}: {author}'
