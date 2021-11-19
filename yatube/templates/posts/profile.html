@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}
+  {{ title }}
+{% endblock %}
+{% block content %}
+  <div class="container py-5">        
+    <h1>Все посты пользователя {{  profile_user.get_full_name }} </h1>
+    <h3>Всего постов: {{ profile_user.posts.count }} </h3>   
+    {% for post in page_obj %}
+      {% with author_not_hide='False'%}
+        {% include 'posts/includes/post_list.html'%}
+      {% endwith %}
+      {% if not forloop.last %}<hr>{% endif %}  
+    {% endfor %}
+    {% include 'posts/includes/paginator.html' %}
+  </div>
+{% endblock %}
