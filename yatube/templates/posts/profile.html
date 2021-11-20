@@ -5,7 +5,8 @@
 {% block content %}
   <div class="container py-5">        
     <h1>Все посты пользователя {{  profile_user.get_full_name }} </h1>
-    <h3>Всего постов: {{ profile_user.posts.count }} </h3>   
+    <h3>Всего постов: {{ profile_user.posts.count }} </h3>
+    {% include 'posts/includes/following.html'%}
     {% for post in page_obj %}
       {% with author_not_hide='False'%}
         {% include 'posts/includes/post_list.html'%}

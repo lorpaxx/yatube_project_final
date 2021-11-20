@@ -1,0 +1,17 @@
+{% if user.is_authenticated %}
+  {% if following %}
+    <a
+      class="btn btn-lg btn-light"
+      href="{% url 'posts:profile_unfollow' profile_user.username %}" role="button"
+    >
+      Отписаться
+    </a>
+  {% else %}
+    <a
+      class="btn btn-lg btn-primary"
+      href="{% url 'posts:profile_follow' profile_user.username %}" role="button"
+    >
+      Подписаться
+    </a>
+  {% endif %}
+{% endif %}

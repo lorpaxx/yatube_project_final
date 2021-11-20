@@ -55,10 +55,13 @@ def profile(request, username):
     paginator = Paginator(post_list, COUNT_OF_PAGE_POST)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    following = request.user.follower.filter(author=profile_user).exists()
+
     context = {
         'title': title_profile,
         'profile_user': profile_user,
         'page_obj': page_obj,
+        'following': following,
     }
     return render(request, template, context)
 
@@ -193,8 +196,7 @@ def profile_follow(request, username):
     if (not check_follow) and (user != author):
         new_follow = Follow.objects.create(user=user, author=author)
         new_follow.save()
-        return redirect('posts:follow_index')
-    return redirect('posts:index')
+    return redirect('posts:profile', username=username)
 
 
 @login_required
@@ -208,5 +210,4 @@ def profile_unfollow(request, username):
     if check_follow:
         follow = Follow.objects.get(user=user, author=author)
         follow.delete()
-        return redirect('posts:follow_index')
-    return redirect('posts:index')
+    return redirect('posts:profile', username=username)
