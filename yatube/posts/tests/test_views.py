@@ -9,7 +9,7 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
 
-from posts.models import Post, Group, Comment
+from posts.models import Post, Group, Comment, Follow
 
 from yatube.settings import COUNT_OF_PAGE_POST, TIME_CACHED
 
@@ -96,6 +96,7 @@ class PostsPaginatorViewsTest(TestCase):
         '''
         super().setUpClass()
         cls.user = User.objects.create_user(username='usertest')
+        cls.follower_user = User.objects.create_user(username='follower_user')
         cls.group = Group.objects.create(
             title='Тестовая группа 1',
             slug='slug-g1',
@@ -111,6 +112,10 @@ class PostsPaginatorViewsTest(TestCase):
                     group=cls.group
                 )
             )
+        cls.follow = Follow.objects.create(
+            user=cls.follower_user,
+            author=cls.user
+        )
 
     def setUp(self):
         '''
@@ -120,7 +125,9 @@ class PostsPaginatorViewsTest(TestCase):
         self.guest_client = Client()
 
         self.authorized_client = Client()
-        self.authorized_client.force_login(PostsPaginatorViewsTest.user)
+        self.authorized_client.force_login(
+            PostsPaginatorViewsTest.follower_user
+        )
 
         self.pages = (
             reverse('posts:index'),
@@ -152,6 +159,28 @@ class PostsPaginatorViewsTest(TestCase):
                     (PostsPaginatorViewsTest.count_posts - COUNT_OF_PAGE_POST)
                 )
 
+    def test_posts_views_paginator_follow_first_page(self):
+        '''
+        Тестируем пагинатор на 1 странице с follow.
+        '''
+        page = reverse('posts:follow_index')
+        response = self.authorized_client.get(page)
+        self.assertEqual(
+            len(response.context['page_obj']),
+            COUNT_OF_PAGE_POST,
+        )
+
+    def test_posts_views_paginator_follow_second_page(self):
+        '''
+        Тестируем пагинатор на 2-й странице с follow.
+        '''
+        page = reverse('posts:follow_index')
+        response = self.authorized_client.get(page + '?page=2')
+        self.assertEqual(
+            len(response.context['page_obj']),
+            (PostsPaginatorViewsTest.count_posts - COUNT_OF_PAGE_POST),
+        )
+
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostsContextTest(TestCase):
@@ -167,6 +196,7 @@ class PostsContextTest(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(username='usertest')
         cls.user2 = User.objects.create_user(username='usertest2')
+        cls.user_follower = User.objects.create_user(username='follower_user')
         cls.small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -201,6 +231,10 @@ class PostsContextTest(TestCase):
             post=cls.post,
             text='Тестовый комментарий'
         )
+        cls.follow = Follow.objects.create(
+            user=cls.user_follower,
+            author=cls.user
+        )
 
     def setUp(self):
         '''
@@ -213,6 +247,8 @@ class PostsContextTest(TestCase):
         self.authorized_client.force_login(PostsContextTest.user)
         self.other_authorized_client = Client()
         self.other_authorized_client.force_login(PostsContextTest.user2)
+        self.follower_client = Client()
+        self.follower_client.force_login(PostsContextTest.user_follower)
 
     @classmethod
     def tearDownClass(cls):
@@ -260,7 +296,7 @@ class PostsContextTest(TestCase):
         response = self.guest_client.get(
             reverse(
                 'posts:post_detail',
-                kwargs={'post_id': 1}
+                kwargs={'post_id': PostsContextTest.post.id}
             )
         )
         post = response.context['post']
@@ -303,7 +339,8 @@ class PostsContextTest(TestCase):
                     expected_post.text,
                     expected_post.author,
                     expected_post.group,
-                    expected_post.image)
+                    expected_post.image
+                )
 
     def test_posts_views_page_index_cached(self):
         '''
@@ -339,3 +376,105 @@ class PostsContextTest(TestCase):
         self.assertEqual(
             len(response.context['page_obj']), count_posts_in_response + 1,
             'Тест не пройден, должен был уже новый пост отобразиться')
+
+    def test_posts_views_page_follow_show_correct_context(self):
+        '''
+        В шаблон posts:follow_index и post:profile передан верный контекст.
+        '''
+        response = self.follower_client.get(
+            reverse('posts:follow_index')
+        )
+        post = response.context['page_obj'][0]
+        expected_post = PostsContextTest.post
+        self.check_post(
+            post,
+            expected_post.text,
+            expected_post.author,
+            expected_post.group,
+            expected_post.image
+        )
+
+        response = self.follower_client.get(
+            reverse('posts:profile', kwargs={'username': 'usertest'})
+        )
+        self.assertTrue(
+            response.context.get('following', default=False),
+            (
+                'Тест не пройден, '
+                'не передаётся following=True или вообще не передаётся'
+            )
+        )
+
+    def test_posts_views_follow_create(self):
+        '''
+        Проверяем создание подписки.
+        '''
+        count_follow = Follow.objects.count()
+        author_count_follower = PostsContextTest.user.following.count()
+        user2_count_following = PostsContextTest.user2.follower.count()
+        response = self.other_authorized_client.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': 'usertest'}
+            )
+        )
+        self.assertEqual(
+            Follow.objects.count(),
+            count_follow + 1,
+            'Тест не пройден, новый Follow не создался'
+        )
+        self.assertTrue(
+            Follow.objects.filter(
+                user=PostsContextTest.user2,
+                author=PostsContextTest.user
+            ).exists(),
+            'Тест не пройден, Follow не перенеслась в базу'
+        )
+        self.assertEqual(
+            PostsContextTest.user.following.count(),
+            author_count_follower + 1,
+            'Тест не пройден, у автора не появился подписчик'
+        )
+        self.assertEqual(
+            PostsContextTest.user2.follower.count(),
+            user2_count_following + 1,
+            'Тест не пройден, у подписчика не увеличилось число подписок'
+        )
+        self.assertEqual(response.status_code, 302)
+
+    def test_posts_views_follow_delete(self):
+        '''
+        Проверяем удаление подписки.
+        '''
+        count_follow = Follow.objects.count()
+        author_count_follower = PostsContextTest.user.following.count()
+        user_count_following = PostsContextTest.user_follower.follower.count()
+        response = self.follower_client.get(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': 'usertest'}
+            )
+        )
+        self.assertEqual(
+            Follow.objects.count(),
+            count_follow - 1,
+            'Тест не пройден, Follow не удалился'
+        )
+        self.assertFalse(
+            Follow.objects.filter(
+                user=PostsContextTest.user_follower,
+                author=PostsContextTest.user
+            ).exists(),
+            'Тест не пройден, Follow не перенеслась в базу'
+        )
+        self.assertEqual(
+            PostsContextTest.user.following.count(),
+            author_count_follower - 1,
+            'Тест не пройден, у автора не удалился подписчик'
+        )
+        self.assertEqual(
+            PostsContextTest.user_follower.follower.count(),
+            user_count_following - 1,
+            'Тест не пройден, у подписчика не уменьшилось число подписок'
+        )
+        self.assertEqual(response.status_code, 302)
