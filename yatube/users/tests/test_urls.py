@@ -45,7 +45,11 @@ class UsersURLTests(TestCase):
                 response = self.guest_client.get(verifiable_URL)
                 self.assertEqual(
                     response.status_code, HTTPStatus.OK,
-                    f'Тест не пройден, {verifiable_URL} не доступен для анонимного юзера')
+                    (
+                        'Тест не пройден,'
+                        f' {verifiable_URL} не доступен для анонимного юзера'
+                    )
+                )
 
     def test_users_urls_redirect_anonimus_user(self):
         '''

@@ -157,4 +157,4 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
-TIME_CACHED = 5
+TIME_CACHED = 20
