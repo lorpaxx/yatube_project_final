@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.cache import cache_page
 
-from .models import Group, Post, User, Comment
+from .models import Follow, Group, Post, User, Comment
 from .forms import PostForm, CommentForm
 
 from yatube.settings import COUNT_OF_PAGE_POST, TIME_CACHED
@@ -160,3 +160,53 @@ def post_edit(request, post_id):
 
     form.save()
     return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    '''
+    Отображет те посты, на которые подписан user.
+    '''
+    template = 'posts/follow.html'
+    user: User = request.user
+    follows = user.follower.all()
+    authors = list(follow.author for follow in follows)
+    post_list = Post.objects.filter(author__in=authors)
+    paginator = Paginator(post_list, COUNT_OF_PAGE_POST)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'title': 'Последние обновления на сайте',
+        'page_obj': page_obj,
+    }
+    return render(request, template, context)
+
+
+@login_required
+def profile_follow(request, username):
+    '''
+    user подписывается на автора username.
+    '''
+    user = request.user
+    author = get_object_or_404(User, username=username)
+    check_follow = Follow.objects.filter(user=user, author=author).exists()
+    if (not check_follow) and (user != author):
+        new_follow = Follow.objects.create(user=user, author=author)
+        new_follow.save()
+        return redirect('posts:follow_index')
+    return redirect('posts:index')
+
+
+@login_required
+def profile_unfollow(request, username):
+    '''
+    user отписывается от автора username.
+    '''
+    user = request.user
+    author = get_object_or_404(User, username=username)
+    check_follow = Follow.objects.filter(user=user, author=author).exists()
+    if check_follow:
+        follow = Follow.objects.get(user=user, author=author)
+        follow.delete()
+        return redirect('posts:follow_index')
+    return redirect('posts:index')
