@@ -172,9 +172,7 @@ def follow_index(request):
     '''
     template = 'posts/follow.html'
     user: User = request.user
-    follows = user.follower.all()
-    authors = list(follow.author for follow in follows)
-    post_list = Post.objects.filter(author__in=authors)
+    post_list = Post.objects.filter(author__following__user=user)
     paginator = Paginator(post_list, COUNT_OF_PAGE_POST)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -192,10 +190,8 @@ def profile_follow(request, username):
     '''
     user = request.user
     author = get_object_or_404(User, username=username)
-    check_follow = Follow.objects.filter(user=user, author=author).exists()
-    if (not check_follow) and (user != author):
-        new_follow = Follow.objects.create(user=user, author=author)
-        new_follow.save()
+    if (user != author):
+        Follow.objects.get_or_create(user=user, author=author)
     return redirect('posts:profile', username=username)
 
 
@@ -206,8 +202,7 @@ def profile_unfollow(request, username):
     '''
     user = request.user
     author = get_object_or_404(User, username=username)
-    check_follow = Follow.objects.filter(user=user, author=author).exists()
-    if check_follow:
-        follow = Follow.objects.get(user=user, author=author)
-        follow.delete()
+    check_follow = Follow.objects.filter(user=user, author=author)
+    if check_follow.exists():
+        check_follow.delete()
     return redirect('posts:profile', username=username)
