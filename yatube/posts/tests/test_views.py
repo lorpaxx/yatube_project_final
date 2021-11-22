@@ -275,7 +275,7 @@ class PostsContextTest(TestCase):
             post.image, image,
             'Тест не пройден, картинка поста не совпадает с ожидаемым')
 
-    def check_comment(self, comment: Comment, post, author, text):
+    def check_comment(self, comment, post, author, text):
         '''
         Проверяем, что экземпляр коммента содержит ожидаемые значения.
         '''

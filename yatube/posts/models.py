@@ -25,6 +25,10 @@ class Group(models.Model):
         help_text='Краткое описание группы'
     )
 
+    class Meta:
+        verbose_name = 'Группа'
+        verbose_name_plural = 'Группы'
+
     def __str__(self):
         '''
         При обращении к экземпляру возвращаем slug для ссылки на группу.
@@ -152,6 +156,12 @@ class Follow(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_follow'
+            ),
+        ]
 
     def __str__(self):
         '''
