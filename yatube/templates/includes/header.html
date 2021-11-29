@@ -25,7 +25,7 @@
             <a class="nav-link link-light {% if view_name == 'users:logout' %}active{% endif %}" href="{% url 'users:logout' %}">Выйти</a>
           </li>
           <li class="nav-item">
-            Пользователь: {{ user.username }}
+            <a class="nav-link link-light {% if profile_user and profile_user == user%}active{% endif %}" href="{% url 'posts:profile' user %}">Пользователь: {{ user.username }}</a>
           <li>
         {% else %}
           <li class="nav-item"> 

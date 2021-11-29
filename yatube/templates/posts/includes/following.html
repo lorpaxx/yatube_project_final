@@ -1,4 +1,4 @@
-{% if user.is_authenticated %}
+{% if user.is_authenticated and profile_user != user%}
   {% if following %}
     <a
       class="btn btn-lg btn-light"
