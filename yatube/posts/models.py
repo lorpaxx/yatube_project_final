@@ -161,6 +161,10 @@ class Follow(models.Model):
                 fields=('user', 'author'),
                 name='unique_follow'
             ),
+            models.CheckConstraint(
+                check=~(models.Q(user=models.F('author'))),
+                name='user_is_not_author'
+            ),
         )
 
     def __str__(self):

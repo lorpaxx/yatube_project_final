@@ -1,16 +1,16 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render, redirect
-# from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import cache_page
 
 from .models import Follow, Group, Post, User, Comment
 from .forms import PostForm, CommentForm
 
 from yatube.settings import COUNT_OF_PAGE_POST
-# from yatube.settings import TIME_CACHED
+from yatube.settings import TIME_CACHED
 
 
-# @cache_page(TIME_CACHED, key_prefix='index_page')
+@cache_page(TIME_CACHED, key_prefix='index_page')
 def index(request):
     '''
     Функция вызова заглавной страницы.

@@ -348,6 +348,7 @@ class PostsContextTest(TestCase):
         '''
         response = self.authorized_client.get(reverse('posts:index'))
         count_posts_in_response = len(response.context['page_obj'])
+        # print(count_posts_in_response)
         new_post = Post.objects.create(
             author=PostsContextTest.user,
             text='Тестовый пост 2'
