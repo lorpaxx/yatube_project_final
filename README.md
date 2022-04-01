@@ -11,7 +11,7 @@ Django 2.2.19
 ## Установка
 ### Клонировать репозиторий с github:
 ```
-git clone https://github.com/lorpaxx/hw05_final.git
+https://github.com/lorpaxx/yatube_project_final.git
 ```
 ### Перейти в склонированный каталог
 ```
@@ -44,5 +44,5 @@ cd yatube
 python manage.py migrate
 python manage.py runserver
 ```
- ## Авторы
+ ## Автор
  *Александр Бебякин*
