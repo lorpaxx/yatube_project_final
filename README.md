@@ -15,7 +15,7 @@ https://github.com/lorpaxx/yatube_project_final.git
 ```
 ### Перейти в склонированный каталог
 ```
-cd hw05_final
+cd yatube_project_final
 ```
 ### Создать и активировать виртуальное окружение, обновить pip
 windows
